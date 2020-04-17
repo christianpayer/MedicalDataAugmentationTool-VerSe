@@ -53,7 +53,7 @@ class MainLoop(MainLoopBase):
         self.unet = unet
         self.network_parameters = network_parameters
         self.padding = 'same'
-        self.clip_gradient_global_norm = 5.0
+        self.clip_gradient_global_norm = 1.0
 
         self.use_pyro_dataset = False
         self.save_output_images = True
@@ -98,8 +98,6 @@ class MainLoop(MainLoopBase):
         self.valid_landmarks_file = os.path.join(self.setup_base_folder, 'valid_landmarks.csv')
         self.test_id_list = utils.io.text.load_list(self.test_file)
         self.valid_landmarks = utils.io.text.load_dict_csv(self.valid_landmarks_file)
-
-        self.load_model_filename = './output/vertebrae_segmentation/network_u/UnetClassicAvgLinear3d/baseline/train_all/2020-03-26_14-26-00/weights/model-1000'
 
     def init_networks(self):
         """
@@ -268,8 +266,8 @@ class MainLoop(MainLoopBase):
 
 
 if __name__ == '__main__':
-    network_parameters = OrderedDict([('num_filters_base', 64), ('double_features_per_level', False), ('num_levels', 5), ('activation', 'relu')])
-    for cv in ['train_all', 0, 1, 2]:
+    network_parameters = OrderedDict([('num_filters_base', 64), ('double_features_per_level', False), ('num_levels', 5), ('activation', 'relu'), ('dropout_ratio', 0.25)])
+    for cv in ['train_all']:
         loop = MainLoop(cv, network_u, UnetClassicAvgLinear3d, network_parameters, 0.0001, output_folder_name='baseline')
         loop.run()
 
