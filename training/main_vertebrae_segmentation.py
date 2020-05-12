@@ -57,6 +57,7 @@ class MainLoop(MainLoopBase):
 
         self.use_pyro_dataset = False
         self.save_output_images = True
+        self.save_output_images_as_uint = True  # set to False, if you want to see the direct network output
         self.save_debug_images = False
         self.has_validation_groundtruth = cv in [0, 1, 2]
         self.local_base_folder = '../verse2019_dataset'
@@ -219,7 +220,6 @@ class MainLoop(MainLoopBase):
 
                 image, prediction, transformation = self.test_full_image(dataset_entry)
 
-                origin = transformation.TransformPoint(np.zeros(3, np.float64))
                 if filter_largest_cc:
                     prediction_thresh_np = (prediction > 0.5).astype(np.uint8)
                     largest_connected_component = utils.np_image.largest_connected_component(prediction_thresh_np[0])
@@ -227,8 +227,17 @@ class MainLoop(MainLoopBase):
                     prediction[prediction_thresh_np == 1] = 0
 
                 if self.save_output_images:
-                    utils.io.image.write_multichannel_np(image, self.output_file_for_current_iteration(image_id + '_' + landmark_id + '_input.mha'), normalization_mode='min_max', split_channel_axis=True, sitk_image_mode='default', data_format=self.data_format, image_type=np.uint8, spacing=self.image_spacing, origin=origin)
-                    utils.io.image.write_multichannel_np(prediction, self.output_file_for_current_iteration(image_id + '_' + landmark_id + '_prediction.mha'), normalization_mode=(0, 1), split_channel_axis=True, sitk_image_mode='default', data_format=self.data_format, image_type=np.uint8, spacing=self.image_spacing, origin=origin)
+                    if self.save_output_images_as_uint:
+                        image_normalization = 'min_max'
+                        label_normalization = (0, 1)
+                        output_image_type = np.uint8
+                    else:
+                        image_normalization = None
+                        label_normalization = None
+                        output_image_type = np.float32
+                    origin = transformation.TransformPoint(np.zeros(3, np.float64))
+                    utils.io.image.write_multichannel_np(image, self.output_file_for_current_iteration(image_id + '_' + landmark_id + '_input.mha'), normalization_mode=image_normalization, split_channel_axis=True, sitk_image_mode='default', data_format=self.data_format, image_type=output_image_type, spacing=self.image_spacing, origin=origin)
+                    utils.io.image.write_multichannel_np(prediction, self.output_file_for_current_iteration(image_id + '_' + landmark_id + '_prediction.mha'), normalization_mode=label_normalization, split_channel_axis=True, sitk_image_mode='default', data_format=self.data_format, image_type=output_image_type, spacing=self.image_spacing, origin=origin)
 
                 prediction_resampled_sitk = utils.sitk_image.transform_np_output_to_sitk_input(output_image=prediction,
                                                                                                output_spacing=self.image_spacing,

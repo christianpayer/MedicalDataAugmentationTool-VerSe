@@ -61,6 +61,7 @@ class MainLoop(MainLoopBase):
 
         self.use_pyro_dataset = False
         self.save_output_images = True
+        self.save_output_images_as_uint = True  # set to False, if you want to see the direct network output
         self.save_debug_images = False
         self.has_validation_groundtruth = cv in [0, 1, 2]
         self.local_base_folder = '../verse2019_dataset'
@@ -238,10 +239,17 @@ class MainLoop(MainLoopBase):
             image, prediction, transformation = self.test_cropped_image(dataset_entry)
 
             if self.save_output_images:
+                if self.save_output_images_as_uint:
+                    image_normalization = 'min_max'
+                    heatmap_normalization = (0, 1)
+                    output_image_type = np.uint8
+                else:
+                    image_normalization = None
+                    heatmap_normalization = None
+                    output_image_type = np.float32
                 origin = transformation.TransformPoint(np.zeros(3, np.float64))
-                heatmap_normalization_mode = (0, 1)
-                utils.io.image.write_multichannel_np(image, self.output_file_for_current_iteration(current_id + '_input.mha'), normalization_mode='min_max', split_channel_axis=True, sitk_image_mode='default', data_format=self.data_format, image_type=np.uint8, spacing=self.image_spacing, origin=origin)
-                utils.io.image.write_multichannel_np(prediction, self.output_file_for_current_iteration(current_id + '_prediction.mha'), normalization_mode=heatmap_normalization_mode, split_channel_axis=True, data_format=self.data_format, image_type=np.uint8, spacing=self.image_spacing, origin=origin)
+                utils.io.image.write_multichannel_np(image, self.output_file_for_current_iteration(current_id + '_input.mha'), normalization_mode=image_normalization, split_channel_axis=True, sitk_image_mode='default', data_format=self.data_format, image_type=output_image_type, spacing=self.image_spacing, origin=origin)
+                utils.io.image.write_multichannel_np(prediction, self.output_file_for_current_iteration(current_id + '_prediction.mha'), normalization_mode=heatmap_normalization, split_channel_axis=True, sitk_image_mode='vector', data_format=self.data_format, image_type=output_image_type, spacing=self.image_spacing, origin=origin)
 
             local_maxima_landmarks = heatmap_maxima.get_landmarks(prediction, input_image, self.image_spacing, transformation)
             landmark_sequence = spine_postprocessing.postprocess_landmarks(local_maxima_landmarks, prediction.shape)
