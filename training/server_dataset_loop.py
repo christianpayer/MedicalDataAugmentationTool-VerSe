@@ -5,7 +5,7 @@ Pyro4.config.SERIALIZERS_ACCEPTED = {'pickle'}
 import socket
 from datasets.pyro_dataset import PyroServerDataset
 
-from bin.experiments.semantic_segmentation.verse2019.dataset import Dataset
+from dataset import Dataset
 
 @Pyro4.expose
 class VerseServerDataset(PyroServerDataset):
