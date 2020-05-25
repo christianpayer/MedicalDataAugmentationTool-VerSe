@@ -2,6 +2,7 @@
 import tensorflow as tf
 from tensorflow_train.layers.layers import conv3d, concat_channels, avg_pool3d, dropout
 from tensorflow_train.layers.resize import resize_trilinear, resize_tricubic
+from tensorflow_train.layers.interpolation import upsample3d_linear, upsample3d_cubic
 from tensorflow_train.networks.unet_base import UnetBase
 from tensorflow_train.layers.initializers import selu_initializer, he_initializer
 
@@ -40,7 +41,14 @@ class UnetClassicAvgLinear3d(UnetBase):
         return avg_pool3d(node, [2, 2, 2], name='downsample' + str(current_level), data_format=self.data_format)
 
     def upsample(self, node, current_level, is_training):
-        return resize_trilinear(node, factors=[2, 2, 2], name='upsample' + str(current_level), data_format=self.data_format)
+        if self.data_format == 'channels_last':
+            # suppose that 'channels_last' means CPU
+            # resize_trilinear is much faster on CPU
+            return resize_trilinear(node, factors=[2, 2, 2], name='upsample' + str(current_level), data_format=self.data_format)
+        else:
+            # suppose that 'channels_first' means GPU
+            # upsample3d_linear is much faster on GPU
+            return upsample3d_linear(node, factors=[2, 2, 2], name='upsample' + str(current_level), data_format=self.data_format, padding='valid_cropped')
 
     def conv(self, node, current_level, postfix, is_training):
         return conv3d(node,
@@ -130,7 +138,14 @@ def spatial_configuration_net(input, num_labels, is_training, data_format='chann
     conv = conv3d(conv, filters=num_filters_base, kernel_size=[7, 7, 7], name='sconv1', activation=activation, data_format=data_format, is_training=is_training, padding=padding)
     conv = conv3d(conv, filters=num_filters_base, kernel_size=[7, 7, 7], name='sconv2', activation=activation, data_format=data_format, is_training=is_training, padding=padding)
     conv = conv3d(conv, filters=num_labels, kernel_size=[7, 7, 7], name='spatial_downsampled', kernel_initializer=heatmap_layer_kernel_initializer, activation=tf.nn.tanh, data_format=data_format, is_training=is_training, padding=padding)
-    spatial_heatmaps = resize_tricubic(conv, factors=[downsampling_factor] * 3, name='spatial_heatmaps', data_format=data_format)
+    if data_format == 'channels_last':
+        # suppose that 'channels_last' means CPU
+        # resize_trilinear is much faster on CPU
+        spatial_heatmaps = resize_tricubic(conv, factors=[downsampling_factor] * 3, name='spatial_heatmaps', data_format=data_format)
+    else:
+        # suppose that 'channels_first' means GPU
+        # upsample3d_linear is much faster on GPU
+        spatial_heatmaps = upsample3d_cubic(conv, factors=[downsampling_factor] * 3, name='spatial_heatmaps', data_format=data_format, padding='valid_cropped')
 
     heatmaps = local_heatmaps * spatial_heatmaps
 
