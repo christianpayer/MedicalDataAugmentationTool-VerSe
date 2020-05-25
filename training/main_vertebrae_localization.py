@@ -60,6 +60,7 @@ class MainLoop(MainLoopBase):
         self.clip_gradient_global_norm = 100000.0
 
         self.use_pyro_dataset = False
+        self.use_spine_postprocessing = True
         self.save_output_images = True
         self.save_output_images_as_uint = True  # set to False, if you want to see the direct network output
         self.save_debug_images = False
@@ -223,8 +224,11 @@ class MainLoop(MainLoopBase):
         channel_axis = 0
         if self.data_format == 'channels_last':
             channel_axis = 3
-        heatmap_maxima = HeatmapTest(channel_axis, False, return_multiple_maxima=True, min_max_distance=7, min_max_value=0.25, multiple_min_max_value_factor=0.1)
-        spine_postprocessing = SpinePostprocessing(num_landmarks=self.num_landmarks, image_spacing=self.image_spacing)
+        if self.use_spine_postprocessing:
+            heatmap_maxima = HeatmapTest(channel_axis, False, return_multiple_maxima=True, min_max_distance=7, min_max_value=0.25, multiple_min_max_value_factor=0.1)
+            spine_postprocessing = SpinePostprocessing(num_landmarks=self.num_landmarks, image_spacing=self.image_spacing)
+        else:
+            heatmap_maxima = HeatmapTest(channel_axis, False)
 
         landmark_statistics = LandmarkStatistics()
         landmarks = {}
@@ -251,9 +255,13 @@ class MainLoop(MainLoopBase):
                 utils.io.image.write_multichannel_np(image, self.output_file_for_current_iteration(current_id + '_input.mha'), normalization_mode=image_normalization, split_channel_axis=True, sitk_image_mode='default', data_format=self.data_format, image_type=output_image_type, spacing=self.image_spacing, origin=origin)
                 utils.io.image.write_multichannel_np(prediction, self.output_file_for_current_iteration(current_id + '_prediction.mha'), normalization_mode=heatmap_normalization, split_channel_axis=True, sitk_image_mode='vector', data_format=self.data_format, image_type=output_image_type, spacing=self.image_spacing, origin=origin)
 
-            local_maxima_landmarks = heatmap_maxima.get_landmarks(prediction, input_image, self.image_spacing, transformation)
-            landmark_sequence = spine_postprocessing.postprocess_landmarks(local_maxima_landmarks, prediction.shape)
-            landmarks[current_id] = landmark_sequence
+            if self.use_spine_postprocessing:
+                local_maxima_landmarks = heatmap_maxima.get_landmarks(prediction, input_image, self.image_spacing, transformation)
+                landmark_sequence = spine_postprocessing.postprocess_landmarks(local_maxima_landmarks, prediction.shape)
+                landmarks[current_id] = landmark_sequence
+            else:
+                maxima_landmarks = heatmap_maxima.get_landmarks(prediction, input_image, self.image_spacing, transformation)
+                landmarks[current_id] = maxima_landmarks
 
             if self.has_validation_groundtruth:
                 landmark_statistics.add_landmarks(current_id, landmark_sequence, target_landmarks)
