@@ -28,14 +28,25 @@ def save_valid_landmarks_list(landmarks_dict, filename):
 if __name__ == '__main__':
     # this script converts the landmark json files from the VerSe 2019 challenge dataset to
     # a landmark.csv file with physical coordinates
-    verse_dataset_folder = '../verse2019_dataset'
-    files = glob(os.path.join(verse_dataset_folder, 'images', '*.json'))
+    # set to true if generating files for verse2020
+    verse2020 = False
+    if verse2020:
+        verse_dataset_folder = '../verse2020_dataset'
+        landmark_mapping = dict([(i + 1, i) for i in range(25)] + [(28, 25)])
+    else:
+        verse_dataset_folder = '../verse2019_dataset'
+        landmark_mapping = dict([(i + 1, i) for i in range(25)])
+    num_landmarks = len(landmark_mapping)
     landmarks_dict = {}
-    num_landmarks = 25
+    files = glob(os.path.join(verse_dataset_folder, 'images', '*.json'))
     for filename in sorted(files):
         # get image id
         filename_wo_folder = os.path.basename(filename)
-        filename_wo_folder_and_ext = filename_wo_folder[:filename_wo_folder.find('_ctd')]
+        if verse2020:
+            ext_length = len('_ctd-iso.json')
+        else:
+            ext_length = len('_ctd.json')
+        filename_wo_folder_and_ext = filename_wo_folder[:-ext_length]
         image_id = filename_wo_folder_and_ext
         print(filename_wo_folder_and_ext)
         # get image meta data
@@ -51,13 +62,16 @@ if __name__ == '__main__':
             json_data = json.load(f)
             for landmark in json_data:
                 # convert verse coordinate system to physical coordinates
-                coords = np.array([float(landmark['Z']), float(landmark['Y']), size[2] * spacing[2] - float(landmark['X'])])
+                if verse2020:
+                    coords = np.array([size[0] * spacing[0] - float(landmark['Z']), float(landmark['X']), size[2] * spacing[2] - float(landmark['Y'])])
+                else:
+                    coords = np.array([float(landmark['Z']), float(landmark['Y']), size[2] * spacing[2] - float(landmark['X'])])
                 # labels in verse start at 1, our indexing starts at 0
-                index = int(landmark['label']) - 1
+                index = landmark_mapping[int(landmark['label'])]
                 current_landmarks[index].coords = coords
                 current_landmarks[index].is_valid = True
                 print(coords)
         landmarks_dict[image_id] = current_landmarks
 
-    save_points_csv(landmarks_dict, 'landmarks.csv')
-    save_valid_landmarks_list(landmarks_dict, 'valid_landmarks.csv')
+    save_points_csv(landmarks_dict, os.path.join(verse_dataset_folder, 'setup', 'landmarks.csv'))
+    save_valid_landmarks_list(landmarks_dict, os.path.join(verse_dataset_folder, 'setup', 'valid_landmarks.csv'))

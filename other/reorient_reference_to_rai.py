@@ -33,8 +33,9 @@ if __name__ == '__main__':
     for filename in sorted(filenames):
         basename = os.path.basename(filename)
         basename_wo_ext = basename[:basename.find('.nii.gz')]
+        is_seg = basename_wo_ext.endswith('_seg')
         print(basename_wo_ext)
-        image = itk.imread(filename)
+        image = itk.imread(filename, itk.UC if is_seg else itk.SS)
         reoriented = reorient_to_rai(image)
         
         reoriented.SetOrigin([0, 0, 0])
