@@ -236,8 +236,8 @@ class MainLoop(MainLoopBase):
                         label_normalization = None
                         output_image_type = np.float32
                     origin = transformation.TransformPoint(np.zeros(3, np.float64))
-                    utils.io.image.write_multichannel_np(image, self.output_file_for_current_iteration(image_id + '_' + landmark_id + '_input.mha'), normalization_mode=image_normalization, split_channel_axis=True, sitk_image_mode='default', data_format=self.data_format, image_type=output_image_type, spacing=self.image_spacing, origin=origin)
-                    utils.io.image.write_multichannel_np(prediction, self.output_file_for_current_iteration(image_id + '_' + landmark_id + '_prediction.mha'), normalization_mode=label_normalization, split_channel_axis=True, sitk_image_mode='default', data_format=self.data_format, image_type=output_image_type, spacing=self.image_spacing, origin=origin)
+                    utils.io.image.write_multichannel_np(image, self.output_file_for_current_iteration(image_id + '_' + landmark_id + '_input.mha'), output_normalization_mode=image_normalization, data_format=self.data_format, image_type=output_image_type, spacing=self.image_spacing, origin=origin)
+                    utils.io.image.write_multichannel_np(prediction, self.output_file_for_current_iteration(image_id + '_' + landmark_id + '_prediction.mha'), output_normalization_mode=label_normalization, data_format=self.data_format, image_type=output_image_type, spacing=self.image_spacing, origin=origin)
 
                 prediction_resampled_sitk = utils.sitk_image.transform_np_output_to_sitk_input(output_image=prediction,
                                                                                                output_spacing=self.image_spacing,

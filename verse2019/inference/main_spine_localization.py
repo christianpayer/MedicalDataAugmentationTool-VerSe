@@ -150,8 +150,8 @@ class InferenceLoop(object):
                 if self.save_debug_images:
                     origin = transformation.TransformPoint(np.zeros(3, np.float64))
                     heatmap_normalization_mode = (0, 1)
-                    utils.io.image.write_multichannel_np(image, self.output_file_for_current_iteration(current_id + '_input.mha'), normalization_mode='min_max', split_channel_axis=True, sitk_image_mode='default', data_format=self.data_format, image_type=np.uint8, spacing=self.image_spacing, origin=origin)
-                    utils.io.image.write_multichannel_np(prediction, self.output_file_for_current_iteration(current_id + '_prediction.mha'), normalization_mode=heatmap_normalization_mode, split_channel_axis=True, data_format=self.data_format, image_type=np.uint8, spacing=self.image_spacing, origin=origin)
+                    utils.io.image.write_multichannel_np(image, self.output_file_for_current_iteration(current_id + '_input.mha'), output_normalization_mode='min_max', data_format=self.data_format, image_type=np.uint8, spacing=self.image_spacing, origin=origin)
+                    utils.io.image.write_multichannel_np(prediction, self.output_file_for_current_iteration(current_id + '_prediction.mha'), output_normalization_mode=heatmap_normalization_mode, data_format=self.data_format, image_type=np.uint8, spacing=self.image_spacing, origin=origin)
                     utils.io.image.write(predictions_sitk[0], self.output_file_for_current_iteration(current_id + '_prediction_original.mha'))
 
                 predictions_com = input_image.TransformContinuousIndexToPhysicalPoint(list(reversed(utils.np_image.center_of_mass(utils.sitk_np.sitk_to_np_no_copy(predictions_sitk[0])))))

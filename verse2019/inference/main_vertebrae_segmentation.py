@@ -188,8 +188,8 @@ class InferenceLoop(object):
                         prediction[prediction_thresh_np == 1] = 0
                     
                     if self.save_debug_images:
-                        utils.io.image.write_multichannel_np(image, self.output_file_for_current_iteration(image_id + '_' + landmark_id + '_input.mha'), normalization_mode='min_max', split_channel_axis=True, sitk_image_mode='default', data_format=self.data_format, image_type=np.uint8, spacing=self.image_spacing, origin=origin)
-                        utils.io.image.write_multichannel_np(prediction, self.output_file_for_current_iteration(image_id + '_' + landmark_id + '_prediction.mha'), normalization_mode=(0, 1), split_channel_axis=True, sitk_image_mode='default', data_format=self.data_format, image_type=np.uint8, spacing=self.image_spacing, origin=origin)
+                        utils.io.image.write_multichannel_np(image, self.output_file_for_current_iteration(image_id + '_' + landmark_id + '_input.mha'), output_normalization_mode='min_max', data_format=self.data_format, image_type=np.uint8, spacing=self.image_spacing, origin=origin)
+                        utils.io.image.write_multichannel_np(prediction, self.output_file_for_current_iteration(image_id + '_' + landmark_id + '_prediction.mha'), output_normalization_mode=(0, 1), data_format=self.data_format, image_type=np.uint8, spacing=self.image_spacing, origin=origin)
 
                     prediction_resampled_sitk = utils.sitk_image.transform_np_output_to_sitk_input(output_image=prediction,
                                                                                         output_spacing=self.image_spacing,
