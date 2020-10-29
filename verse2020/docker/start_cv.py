@@ -7,7 +7,7 @@ from glob import glob
 def main():
     base_image_folder = '/data'
     base_output_folder = os.path.join(base_image_folder, 'results_christian_payer')
-    base_intermediate_folder = '/tmp'
+    base_intermediate_folder = os.path.join(base_image_folder, 'tmp')
     models_folder = '/models'
     
     all_image_folders = [os.path.split(path)[-1] for path in glob(os.path.join(base_image_folder, '*')) if os.path.isdir(path) and path != base_output_folder]
