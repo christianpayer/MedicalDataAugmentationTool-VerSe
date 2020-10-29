@@ -47,7 +47,7 @@ class MainLoop(MainLoopBase):
                                               num_levels=config.num_levels,
                                               data_format=self.data_format)
         self.network = Unet
-        self.save_output_images = False
+        self.save_output_images = True
         self.save_debug_images = False
         self.image_folder = config.image_folder
         self.setup_folder = config.setup_folder
