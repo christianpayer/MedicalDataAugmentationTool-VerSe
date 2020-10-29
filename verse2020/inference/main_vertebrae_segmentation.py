@@ -198,6 +198,11 @@ class MainLoop(MainLoopBase):
                     prediction_labels_np[slices] = prediction_labels_cropped_np
                     del prediction_resampled_sitk
 
+                if first:
+                    # first is only True, if there exist no valid landmark.
+                    print('No landmarks found for image with id', image_id)
+                    continue
+
                 # delete to save memory
                 del prediction_max_value_np
                 prediction_labels = utils.sitk_np.np_to_sitk(prediction_labels_np)
@@ -217,7 +222,6 @@ class MainLoop(MainLoopBase):
             except Exception:
                 print('ERROR predicting', image_id)
                 traceback.print_exc(file=sys.stdout)
-                print(e)
                 pass
 
 

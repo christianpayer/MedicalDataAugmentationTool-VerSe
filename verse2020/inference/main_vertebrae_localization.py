@@ -266,6 +266,7 @@ class MainLoop(MainLoopBase):
                     curr_landmarks = filter_landmarks_top_bottom(curr_landmarks, input_image)
                 except Exception:
                     print('error in postprocessing', current_id)
+                    traceback.print_exc(file=sys.stdout)
                     curr_landmarks = curr_landmarks_no_postprocessing
                 landmarks[current_id] = curr_landmarks
 
