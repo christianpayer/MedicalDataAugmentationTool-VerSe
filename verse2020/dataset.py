@@ -14,14 +14,14 @@ from generators.landmark_generator import LandmarkGeneratorHeatmap, LandmarkGene
 from generators.image_size_generator import ImageSizeGenerator
 from iterators.id_list_iterator import IdListIterator
 from iterators.resample_labels_id_list_iterator import ResampleLabelsIdListIterator
-from graph.node import LambdaNode, Node
+from graph.node import LambdaNode
 from transformations.intensity.np.shift_scale_clamp import ShiftScaleClamp
 from transformations.intensity.sitk.shift_scale_clamp import ShiftScaleClamp as ShiftScaleClampSitk
 from transformations.spatial import translation, scale, composite, rotation, landmark, deformation, flip
 from utils.np_image import split_label_image, smooth_label_images
 from transformations.intensity.sitk.smooth import gaussian as gaussian_sitk
 from transformations.intensity.np.smooth import gaussian
-from transformations.intensity.np.normalize import normalize_robust, normalize_zero_mean_unit_variance, normalize
+from transformations.intensity.np.normalize import normalize_zero_mean_unit_variance, normalize
 from transformations.intensity.np.gamma import change_gamma_unnormalized
 from utils.random import float_uniform
 from utils.landmark.common import Landmark
@@ -259,7 +259,10 @@ class Dataset(object):
         'landmarks:' LandmarkDataSource that loads the landmark coordinates.
         }
         :param iterator: The dataset iterator.
-        :param cached: If true, use CachedImageDataSource, else ImageDataSource.
+        :param image_cached: If true, use CachedImageDataSource, else ImageDataSource for image datasource.
+        :param labels_cached: If true, use CachedImageDataSource, else ImageDataSource for labels datasource.
+        :param image_preprocessing: Preprocessing function for image datasource.
+        :param cache_size: The cache size for CachedImageDataSource.
         :return: A dict of data sources.
         """
         datasources_dict = {}
@@ -324,9 +327,13 @@ class Dataset(object):
     def data_generators(self, iterator, datasources, transformation, image_post_processing, random_translation_single_landmark, image_size, crop=False):
         """
         Returns the data generators that process one input. See datasources() for dict values.
+        :param iterator: The iterator node.
         :param datasources: datasources dict.
         :param transformation: transformation.
         :param image_post_processing: The np postprocessing function for the image data generator.
+        :param random_translation_single_landmark: If true, randomly translate single landmark.
+        :param image_size: The image size node.
+        :param crop: If true, use landmark_based_crop.
         :return: A dict of data generators.
         """
         generators_dict = {}
@@ -446,6 +453,7 @@ class Dataset(object):
         """
         Splits a groundtruth label image into a stack of one-hot encoded images.
         :param image: The groundtruth label image.
+        :param landmark_index: The landmark index.
         :return: The one-hot encoded image.
         """
         label_image = (image == self.landmark_mapping[landmark_index]).astype(np.float32)
@@ -512,9 +520,10 @@ class Dataset(object):
 
     def landmark_based_crop(self, image, landmarks):
         """
-        Intensity preprocessing function, working on the loaded sitk image, before resampling.
+        Crop an image based on the most upper and most lower landmarks.
         :param image: The sitk image.
-        :return: The preprocessed sitk image.
+        :param landmarks: The landmarks.
+        :return: The cropped sitk image.
         """
         all_coords = [l.coords for l in landmarks if l.is_valid]
         if len(all_coords) < 2:
@@ -539,7 +548,6 @@ class Dataset(object):
         :param image: The np input image.
         :return: The processed image.
         """
-        #image = image + np.random.normal(0, 1, image.shape)
         if not self.normalize_zero_mean_unit_variance:
             random_lambda = float_uniform(0.9, 1.1)
             image = change_gamma_unnormalized(image, random_lambda)
@@ -570,46 +578,12 @@ class Dataset(object):
             output = normalize_zero_mean_unit_variance(image)
         return output
 
-    def spatial_transformation_augmentedx(self, iterator, datasources, image_size):
-        """
-        The spatial image transformation with random augmentation.
-        :param datasources: datasources dict.
-        :return: The transformation.
-        """
-        transformation_list = []
-        kwparents = {'image': datasources['image'], 'output_size': image_size}
-        if self.translate_to_center_landmarks:
-            kwparents['landmarks'] = datasources['landmarks']
-            transformation_list.append(translation.InputCenterToOrigin(self.dim, used_dimensions=[False, False, True]))
-            transformation_list.append(landmark.Center(self.dim, True, used_dimensions=[True, True, False]))
-        elif self.generate_single_vertebrae or self.generate_single_vertebrae_heatmap:
-            single_landmark = LambdaNode(lambda id_dict, landmarks: [landmarks[int(id_dict['landmark_id'])]],
-                                         parents=[iterator, datasources['landmarks']])
-            kwparents['landmarks'] = single_landmark
-            transformation_list.append(landmark.Center(self.dim, True))
-            transformation_list.append(translation.Fixed(self.dim, [0, 20, 0]))
-        else:
-            transformation_list.append(translation.InputCenterToOrigin(self.dim))
-        if self.translate_by_random_factor:
-            transformation_list.append(translation.RandomCropInput(self.dim, None, self.image_spacing, used_dimensions=[False, False, True]))
-        #    transformation_list.append(translation.RandomFactorInput(self.dim, [0, 0, 0.5], [0, 0, self.image_spacing[2] * image_size[2]]))
-        transformation_list.extend([translation.Random(self.dim, [self.random_translation] * self.dim),
-                                    rotation.Random(self.dim, [self.random_rotate] * self.dim),
-                                    scale.RandomUniform(self.dim, self.random_scale),
-                                    scale.Random(self.dim, [self.random_scale] * self.dim),
-                                    flip.Random(self.dim, [0.5 if self.random_flip else 0.0, 0.0, 0.0]),
-                                    translation.OriginToOutputCenter(self.dim, None, self.image_spacing),
-                                    deformation.Output(self.dim, [6, 6, 6], [self.random_deformation] * self.dim, None, self.image_spacing)
-                                    ])
-        comp = composite.Composite(self.dim, transformation_list, name='image', kwparents=kwparents)
-        return LambdaNode(lambda comp, output_size: sitk.DisplacementFieldTransform(sitk.TransformToDisplacementField(comp, sitk.sitkVectorFloat64, size=output_size, outputSpacing=self.image_spacing)),
-                          name='image',
-                          kwparents={'comp': comp, 'output_size': image_size})
-
     def spatial_transformation_augmented(self, iterator, datasources, image_size):
         """
         The spatial image transformation with random augmentation.
+        :param iterator: The iterator node.
         :param datasources: datasources dict.
+        :param image_size: The image size node.
         :return: The transformation.
         """
         transformation_list = []
@@ -628,7 +602,6 @@ class Dataset(object):
             transformation_list.append(translation.InputCenterToOrigin(self.dim))
         if self.translate_by_random_factor:
             transformation_list.append(translation.RandomCropBoundingBox(self.dim, None, self.image_spacing))
-        #    transformation_list.append(translation.RandomFactorInput(self.dim, [0, 0, 0.5], [0, 0, self.image_spacing[2] * image_size[2]]))
         transformation_list.extend([translation.Random(self.dim, [self.random_translation] * self.dim),
                                     rotation.Random(self.dim, [self.random_rotate] * self.dim),
                                     scale.RandomUniform(self.dim, self.random_scale),
@@ -638,14 +611,16 @@ class Dataset(object):
                                     deformation.Output(self.dim, [6, 6, 6], [self.random_deformation] * self.dim, None, self.image_spacing)
                                     ])
         comp = composite.Composite(self.dim, transformation_list, name='image', kwparents=kwparents)
-        return LambdaNode(lambda comp, output_size: sitk.DisplacementFieldTransform(sitk.TransformToDisplacementField(comp, sitk.sitkVectorFloat64, size=output_size, outputSpacing=self.image_spacing)),
+        return LambdaNode(lambda transformation, output_size: sitk.DisplacementFieldTransform(sitk.TransformToDisplacementField(transformation, sitk.sitkVectorFloat64, size=output_size, outputSpacing=self.image_spacing)),
                           name='image',
                           kwparents={'comp': comp, 'output_size': image_size})
 
     def spatial_transformation(self, iterator, datasources, image_size):
         """
         The spatial image transformation without random augmentation.
+        :param iterator: The iterator node.
         :param datasources: datasources dict.
+        :param image_size: The image size node.
         :return: The transformation.
         """
         transformation_list = []
@@ -669,7 +644,9 @@ class Dataset(object):
     def spatial_transformationx(self, iterator, datasources, image_size):
         """
         The spatial image transformation without random augmentation.
+        :param iterator: The iterator node.
         :param datasources: datasources dict.
+        :param image_size: The image size node.
         :return: The transformation.
         """
         transformation_list = []
