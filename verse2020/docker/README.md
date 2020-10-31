@@ -22,6 +22,11 @@ For GPU:
 
 `docker run --gpus '"device=0"' -ti -v <FOLDER_TO_VERSE_DATASET>:/data verse2020 /predict.sh`
 
+You can also pass parameters to docker to run individual steps of the pipeline, e.g.,
+
+`docker run --gpus '"device=0"' -ti -v <FOLDER_TO_VERSE_DATASET>:/data verse2020 /predict.sh preprocessing spine_localization`
+
+will run the preprocessing and spine localization. You can use this to correct intermediate outputs (see output folder tmp) to create a semi-automatic approach. Note that it will not be checked, whether the steps have been run in the correct order. So the error messages may not be meaningful. Possible parameter values are: `preprocessing`, `spine_localization`, `vertebrae_localization`, `vertebrae_segmentation`, `postprocessing`.
 
 ## Citation
 If you use this code for your research, please cite our [paper](https://doi.org/10.5220/0008975201240133) and the overview paper of the [Verse2019 challenge](https://arxiv.org/abs/2001.09193):

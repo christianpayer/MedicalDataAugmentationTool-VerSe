@@ -2,4 +2,4 @@
 
 cd /MedicalDataAugmentationTool/bin/
 export PYTHONPATH=/MedicalDataAugmentationTool
-python start_cv.py
+python start_cv.py "$@"
