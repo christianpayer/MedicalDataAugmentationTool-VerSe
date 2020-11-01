@@ -191,7 +191,7 @@ class Dataset(object):
         :return: IdListIterator used for image_id (and landmark_id) iteration.
         """
         if self.generate_single_vertebrae or self.generate_single_vertebrae_heatmap:
-            valid_landmarks = utils.io.text.load_dict_csv(self.valid_landmarks_file)
+            valid_landmarks = utils.io.text.load_dict_csv(self.valid_landmarks_file, squeeze=False)
 
             def whole_list_postprocessing(id_list):
                 new_id_list = []

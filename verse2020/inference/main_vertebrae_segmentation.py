@@ -60,7 +60,7 @@ class MainLoop(MainLoopBase):
         images_files = sorted(glob(os.path.join(self.image_folder, '*.nii.gz')))
         self.image_id_list = list(map(lambda filename: os.path.basename(filename)[:-len('.nii.gz')], images_files))
         self.valid_landmarks_file = os.path.join(self.setup_folder, 'vertebrae_localization/valid_landmarks.csv')
-        self.valid_landmarks = utils.io.text.load_dict_csv(self.valid_landmarks_file)
+        self.valid_landmarks = utils.io.text.load_dict_csv(self.valid_landmarks_file, squeeze=False)
 
         self.landmark_labels = [i + 1 for i in range(25)] + [28]
         self.landmark_mapping = dict([(i, self.landmark_labels[i]) for i in range(26)])

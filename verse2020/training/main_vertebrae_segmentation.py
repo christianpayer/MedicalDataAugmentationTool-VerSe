@@ -91,7 +91,7 @@ class MainLoop(MainLoopBase):
             self.test_file = os.path.join(self.setup_base_folder, 'train_all.txt')
         self.valid_landmarks_file = os.path.join(self.setup_base_folder, 'valid_landmarks.csv')
         self.test_id_list = utils.io.text.load_list(self.test_file)
-        self.valid_landmarks = utils.io.text.load_dict_csv(self.valid_landmarks_file)
+        self.valid_landmarks = utils.io.text.load_dict_csv(self.valid_landmarks_file, squeeze=False)
 
         self.landmark_labels = [i + 1 for i in range(25)] + [28]
         self.landmark_mapping = dict([(i, self.landmark_labels[i]) for i in range(26)])
