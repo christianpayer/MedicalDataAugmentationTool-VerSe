@@ -613,7 +613,7 @@ class Dataset(object):
         comp = composite.Composite(self.dim, transformation_list, name='image', kwparents=kwparents)
         return LambdaNode(lambda transformation, output_size: sitk.DisplacementFieldTransform(sitk.TransformToDisplacementField(transformation, sitk.sitkVectorFloat64, size=output_size, outputSpacing=self.image_spacing)),
                           name='image',
-                          kwparents={'comp': comp, 'output_size': image_size})
+                          kwparents={'transformation': comp, 'output_size': image_size})
 
     def spatial_transformation(self, iterator, datasources, image_size):
         """
