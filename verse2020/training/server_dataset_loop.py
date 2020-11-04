@@ -14,7 +14,7 @@ class VerseServerDataset(PyroServerDataset):
 
     def init_with_parameters(self, *args, **kwargs):
         # TODO: adapt base folder, in case this script runs on a remote server
-        kwargs['base_folder'] = '/media1/datasets/segmentation/verse20'
+        kwargs['base_folder'] = '../verse2020_dataset/'
         self.dataset_class = Dataset(*args, **kwargs)
         self.dataset = self.dataset_class.dataset_train()
 
