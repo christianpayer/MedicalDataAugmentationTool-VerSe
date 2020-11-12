@@ -211,7 +211,11 @@ class MainLoop(MainLoopBase):
         if len(self.load_model_filenames) == 1:
             self.load_model(self.load_model_filenames[0])
 
-        vis = LandmarkVisualizationMatplotlib(annotations=dict([(i, f'C{i + 1}') for i in range(7)] + [(i, f'T{i - 6}') for i in range(7, 19)] + [(i, f'L{i - 18}') for i in range(19, 25)] + [(25, 'T13')]))
+        vis = LandmarkVisualizationMatplotlib(dim=3,
+                                              annotations=dict([(i, f'C{i + 1}') for i in range(7)] +        # 0-6: C1-C7
+                                                               [(i, f'T{i - 6}') for i in range(7, 19)] +    # 7-18: T1-12
+                                                               [(i, f'L{i - 18}') for i in range(19, 25)] +  # 19-24: L1-6
+                                                               [(25, 'T13')]))                               # 25: T13
 
         channel_axis = 0
         if self.data_format == 'channels_last':
@@ -271,8 +275,8 @@ class MainLoop(MainLoopBase):
                 landmarks[current_id] = curr_landmarks
 
                 if self.save_output_images:
-                    vis.visualize_projections(input_image, curr_landmarks_no_postprocessing, None, filename=self.output_folder_handler.path('output', current_id + '_landmarks.png'))
-                    vis.visualize_projections(input_image, curr_landmarks, None, filename=self.output_folder_handler.path('output', current_id + '_landmarks_pp.png'))
+                    vis.visualize_landmark_projections(input_image, curr_landmarks_no_postprocessing, filename=self.output_folder_handler.path('output', current_id + '_landmarks.png'))
+                    vis.visualize_landmark_projections(input_image, curr_landmarks, filename=self.output_folder_handler.path('output', current_id + '_landmarks_pp.png'))
 
                 verse_landmarks = self.convert_landmarks_to_verse_indexing(curr_landmarks, input_image)
                 self.save_landmarks_verse_json(verse_landmarks, self.output_folder_handler.path(current_id + '_ctd.json'))

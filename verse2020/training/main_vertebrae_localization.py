@@ -79,7 +79,7 @@ class MainLoop(MainLoopBase):
         self.use_pyro_dataset = True
         self.save_output_images = True
         self.save_debug_images = False
-        self.local_base_folder = '/media1/datasets/segmentation/verse20/'
+        self.local_base_folder = '../verse2020_dataset'
         self.image_size = [None, None, None]
         self.image_spacing = [config.spacing] * 3
         self.max_image_size_for_cropped_test = [128, 128, 448]
@@ -88,7 +88,7 @@ class MainLoop(MainLoopBase):
         self.sigma_regularization = 100.0
         self.sigma_scale = 1000.0
         self.cropped_training = True
-        self.base_output_folder = '/media0/experiments/verse2020/vertebrae_localization/'
+        self.base_output_folder = './output/vertebrae_localization/'
         self.additional_output_folder_info = config.info
 
         if self.data_format == 'channels_first':
@@ -338,7 +338,8 @@ class MainLoop(MainLoopBase):
         The test function. Performs inference on the the validation images and calculates the loss.
         """
         print('Testing...')
-        vis = LandmarkVisualizationMatplotlib(annotations=dict([(i, f'C{i + 1}') for i in range(7)] +        # 0-6: C1-C7
+        vis = LandmarkVisualizationMatplotlib(dim=3,
+                                              annotations=dict([(i, f'C{i + 1}') for i in range(7)] +        # 0-6: C1-C7
                                                                [(i, f'T{i - 6}') for i in range(7, 19)] +    # 7-18: T1-12
                                                                [(i, f'L{i - 18}') for i in range(19, 25)] +  # 19-24: L1-6
                                                                [(25, 'T13')]))                               # 25: T13
@@ -396,11 +397,13 @@ class MainLoop(MainLoopBase):
             # landmarks without postprocessing are the first local maxima (with the largest value)
             curr_landmarks_no_postprocessing = [l[0] if len(l) > 0 else Landmark(coords=[np.nan] * 3, is_valid=False)  for l in local_maxima_landmarks]
             landmarks_no_postprocessing[current_id] = curr_landmarks_no_postprocessing
-            vis.visualize_projections(input_image, curr_landmarks_no_postprocessing, target_landmarks, filename=self.output_folder_handler.path_for_iteration(self.current_iter, current_id + '_landmarks.png'))
 
             if self.has_validation_groundtruth:
                 landmark_statistics_no_postprocessing.add_landmarks(current_id, curr_landmarks_no_postprocessing, target_landmarks)
-                vis.visualize_projections(input_image, None, target_landmarks, filename=self.output_folder_handler.path_for_iteration(self.current_iter, current_id + '_landmarks_gt.png'))
+                vis.visualize_landmark_projections(input_image, target_landmarks, filename=self.output_folder_handler.path_for_iteration(self.current_iter, current_id + '_landmarks_gt.png'))
+                vis.visualize_prediction_groundtruth_projections(input_image, curr_landmarks_no_postprocessing, target_landmarks, filename=self.output_folder_handler.path_for_iteration(self.current_iter, current_id + '_landmarks.png'))
+            else:
+                vis.visualize_landmark_projections(input_image, curr_landmarks_no_postprocessing, filename=self.output_folder_handler.path_for_iteration(self.current_iter, current_id + '_landmarks.png'))
 
             if self.evaluate_landmarks_postprocessing:
                 try:
@@ -415,7 +418,9 @@ class MainLoop(MainLoopBase):
 
                 if self.has_validation_groundtruth:
                     landmark_statistics.add_landmarks(current_id, curr_landmarks, target_landmarks)
-                vis.visualize_projections(input_image, curr_landmarks, target_landmarks, filename=self.output_folder_handler.path_for_iteration(self.current_iter, current_id + '_landmarks_pp.png'))
+                    vis.visualize_prediction_groundtruth_projections(input_image, curr_landmarks, target_landmarks, filename=self.output_folder_handler.path_for_iteration(self.current_iter, current_id + '_landmarks_pp.png'))
+                else:
+                    vis.visualize_landmark_projections(input_image, curr_landmarks, filename=self.output_folder_handler.path_for_iteration(self.current_iter, current_id + '_landmarks_pp.png'))
 
         utils.io.landmark.save_points_csv(landmarks, self.output_folder_handler.path_for_iteration(self.current_iter, 'points.csv'))
         utils.io.landmark.save_points_csv(landmarks_no_postprocessing, self.output_folder_handler.path_for_iteration(self.current_iter, 'points_no_postprocessing.csv'))

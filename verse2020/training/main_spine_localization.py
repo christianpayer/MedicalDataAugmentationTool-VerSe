@@ -68,7 +68,7 @@ class MainLoop(MainLoopBase):
         self.sigma_regularization = 100.0
         self.sigma_scale = 1000.0
         self.cropped_training = True
-        self.base_output_folder = '/home/chris/experiments/verse2020/spine_localization/'
+        self.base_output_folder = './output/spine_localization/'
         self.additional_output_folder_info = config.info
 
         self.call_model_and_loss = tf.function(self.call_model_and_loss,

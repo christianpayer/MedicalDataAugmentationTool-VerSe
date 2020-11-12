@@ -65,11 +65,11 @@ class MainLoop(MainLoopBase):
         self.save_output_images = True
         self.save_debug_images = False
         self.has_validation_groundtruth = cv in [0, 1, 2]
-        self.local_base_folder = '/media1/datasets/segmentation/verse20/'
+        self.local_base_folder = '../verse2020_dataset'
         self.image_size = [128, 128, 96]
         self.image_spacing = [config.spacing] * 3
         self.heatmap_size = self.image_size
-        self.base_output_folder = '/media0/experiments/verse2020/vertebrae_segmentation/'
+        self.base_output_folder = './output/vertebrae_segmentation/'
         self.additional_output_folder_info = config.info
 
         if self.data_format == 'channels_first':
