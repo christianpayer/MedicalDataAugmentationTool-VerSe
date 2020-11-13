@@ -641,35 +641,6 @@ class Dataset(object):
         comp = composite.Composite(self.dim, transformation_list, name='image', kwparents=kwparents)
         return comp
 
-    def spatial_transformationx(self, iterator, datasources, image_size):
-        """
-        The spatial image transformation without random augmentation.
-        :param iterator: The iterator node.
-        :param datasources: datasources dict.
-        :param image_size: The image size node.
-        :return: The transformation.
-        """
-        transformation_list = []
-        kwparents = {'image': datasources['image'], 'output_size': image_size}
-        if self.translate_to_center_landmarks:
-            if 'spine_landmarks' in datasources:
-                kwparents['landmarks'] = datasources['spine_landmarks']
-            else:
-                kwparents['landmarks'] = datasources['landmarks']
-            transformation_list.append(translation.InputCenterToOrigin(self.dim, used_dimensions=[False, False, True]))
-            transformation_list.append(landmark.Center(self.dim, True, used_dimensions=[True, True, False]))
-        elif self.generate_single_vertebrae or self.generate_single_vertebrae_heatmap:
-            single_landmark = LambdaNode(lambda id_dict, landmarks: [landmarks[int(id_dict['landmark_id'])]],
-                                         parents=[iterator, datasources['landmarks']])
-            kwparents['landmarks'] = single_landmark
-            transformation_list.append(landmark.Center(self.dim, True))
-            transformation_list.append(translation.Fixed(self.dim, [0, 20, 0]))
-        else:
-            transformation_list.append(translation.InputCenterToOrigin(self.dim))
-        transformation_list.append(translation.OriginToOutputCenter(self.dim, None, self.image_spacing))
-        comp = composite.Composite(self.dim, transformation_list, name='image', kwparents=kwparents)
-        return comp
-
     def crop_randomly_smaller_image_size(self, image_size):
         """
         Randomly use a smaller image size for a given image size.
