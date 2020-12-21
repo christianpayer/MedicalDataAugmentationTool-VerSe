@@ -69,13 +69,14 @@ def process_image(filename, output_folder, sigma):
     reader.SetFileName(filename)
     image = reader.GetOutput()
     reoriented = reorient_to_rai(image)
-    smoothed = smooth(reoriented, sigma)
-    clamped = clamp(smoothed)
-    clamped.SetOrigin([0, 0, 0])
+    if not basename_wo_ext.endswith('_seg'):
+        reoriented = smooth(reoriented, sigma)
+        reoriented = clamp(reoriented)
+    reoriented.SetOrigin([0, 0, 0])
     m = itk.GetMatrixFromArray(np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]], np.float64))
-    clamped.SetDirection(m)
-    clamped.Update()
-    itk.imwrite(clamped, os.path.join(output_folder, basename_wo_ext + '.nii.gz'))
+    reoriented.SetDirection(m)
+    reoriented.Update()
+    itk.imwrite(reoriented, os.path.join(output_folder, basename_wo_ext + '.nii.gz'))
 
 
 if __name__ == '__main__':
