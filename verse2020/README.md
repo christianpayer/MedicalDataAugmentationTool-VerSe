@@ -10,7 +10,7 @@ If you have problems/questions/suggestions about the code, write me a [mail](mai
 ### Dataset preprocessing
 Download the files from the [challenge website](https://verse2020.grand-challenge.org/) and copy them to the folder `verse2020_dataset/images`. The framework expects that the `.nii.gz` files are directly in the folder `verse2020_dataset/images`, e.g., `verse2020_dataset/images/GL003.nii.gz`. In order for the framework to be able to load the data, every image needs to be reoriented to RAI. The following script in the folder `other` performs the reorientation to RAI and Gaussian smoothing for all images:
 
-`python preproces.py --image_folder ../verse2020_dataset/images --output_folder ../verse2020_dataset/images_reoriented --sigma 0.75`
+`python preprocess.py --image_folder ../verse2020_dataset/images --output_folder ../verse2020_dataset/images_reoriented --sigma 0.75`
 
 ### Train models
 In the folder `training` there are the scripts for training the spine localization, vertebrae localization, and vertebrae segmentation networks. Currently they are set up to train the three cross-validation folds as well as train on the whole training set. If you want to see the augmented network input images, set `self.save_debug_images = True`. This will save the images into the folders `debug_train` and `debug_val`. However, as every augmented images will be saved to the hard disk, this could lead to longer training times on slow computers.
